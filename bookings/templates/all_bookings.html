@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All Booked Slots</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            margin: auto;
+            border-collapse: collapse;
+            width: 80%;
+            background: #fff;
+            box-shadow: 0 0 10px #ccc;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background: #af4f4c;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f900;
+        }
+    </style>
+</head>
+<body>
+    <h1>📅 All Upcoming Booked Slots</h1>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Description</th>
+        </tr>
+        {% for booking in bookings %}
+        <tr>
+            <td>{{ booking.name }}</td>
+            <td>{{ booking.phone }}</td>
+            <td>{{ booking.date }}</td>
+            <td>{{ booking.time }}</td>
+            <td>{{ booking.description }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No upcoming bookings.</td></tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

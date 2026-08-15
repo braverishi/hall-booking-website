@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Hall Booking Assistant - Natural Language Booking</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container { 
+      max-width: 800px; 
+      margin: 0 auto; 
+      background: white; 
+      border-radius: 15px; 
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+      color: white;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+      min-height: 100px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 300;
+    }
+    .subtitle {
+      margin: 5px 0 0 0;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+    .user-info {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      text-align: right;
+      font-size: 13px;
+      background: rgba(0, 0, 0, 0.1);
+      padding: 8px 15px;
+      border-radius: 20px;
+    }
+    .user-info a {
+      color: white;
+      text-decoration: none;
+      margin-left: 15px;
+      opacity: 0.9;
+    }
+    .user-info a:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    #chat-box { 
+      background: #f8f9fa; 
+      padding: 20px; 
+      height: 450px; 
+      overflow-y: auto; 
+      border-bottom: 1px solid #e9ecef;
+    }
+    .msg { 
+      margin: 12px 0; 
+      line-height: 1.4;
+    }
+    .user { 
+      text-align: right;
+    }
+    .user-bubble {
+      display: inline-block;
+      background: #007bff;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 18px 18px 5px 18px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+    .bot { 
+      text-align: left;
+    }
+    .bot-bubble {
+      display: inline-block;
+      background: #e9ecef;
+      color: #333;
+      padding: 10px 15px;
+      border-radius: 18px 18px 18px 5px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+    .error .bot-bubble {
+      background: #f8d7da;
+      color: #721c24;
+      border-left: 4px solid #dc3545;
+    }
+    .success .bot-bubble {
+      background: #d4edda;
+      color: #155724;
+      border-left: 4px solid #2831a7;
+    }
+    .input-area {
+      padding: 20px;
+      background: white;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    #user-input {
+      flex: 1;
+      padding: 12px 15px;
+      border: 2px solid #e9ecef;
+      border-radius: 25px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    #user-input:focus {
+      border-color: #007bff;
+    }
+    button {
+      background: #ff0051;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+    .examples {
+      padding: 15px 20px;
+      background: #f8f9fa;
+      border-top: 1px solid #e9ecef;
+      font-size: 13px;
+      color: #6c757d;
+    }
+    .examples strong {
+      color: #495057;
+    }
+    .typing {
+      display: none;
+      text-align: left;
+      font-style: italic;
+      color: #6c757d;
+      padding: 0 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>🏛️ AI Hall Booking Assistant</h2>
+      <p class="subtitle">Book, view, modify, or cancel reservations using natural language</p>
+      <div class="user-info">
+        {% if user.is_authenticated %}
+          Welcome, {{ user.get_full_name|default:user.username }}!
+          <a href="{% url 'logout' %}">Logout</a>
+        {% else %}
+          <a href="{% url 'login' %}">Login</a>
+        {% endif %}
+      </div>
+    </div>
+    <div id="chat-box">
+      <div class="msg bot">
+        <div class="bot-bubble">
+          👋 Hi there! I'm your advanced AI booking assistant with enhanced natural language understanding!
+          <br><br>🚀 <strong>Complex Bookings:</strong>
+          <br>• "Book hall for team meeting next Tuesday afternoon"
+          <br>• "Need venue this weekend for my daughter's birthday, preferably Saturday evening around 6"
+          <br>• "Book tomorrow at 2pm for client demo and Friday evening for party"
+          <br><br>📅 <strong>Smart Time Understanding:</strong>
+          <br>• "after lunch", "half past 3", "COB", "early evening"
+          <br>• "day after tomorrow", "next Monday", "end of this week"
+          <br><br>👀 <strong>View bookings:</strong>
+          <br>• "Show my bookings" / "What's my schedule?"
+          <br>• "Do I have anything booked next week?"
+          <br><br>✏️ <strong>Modify & Cancel:</strong>
+          <br>• "Modify my booking on 8/07/2025 to 7pm"
+          <br>• "Change my birthday booking to 3pm"
+          <br>• "Modify my meeting to tomorrow at 2pm"
+          <br>• "Cancel my last booking" / "Cancel tomorrow's meeting"
+          <br><br>💡 I understand context, preferences, and complex requests - just talk naturally! 😊
+        </div>
+      </div>
+    </div>
+    <div class="typing" id="typing">
+      <div class="bot-bubble">🤔 Thinking...</div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Try: 'Book hall for team meeting next Tuesday afternoon' or 'Show my bookings'" />
+      <button onclick="sendMessage()" id="send-btn">Send</button>
+    </div>
+    <div class="examples">
+      <strong>💡 Complex Examples:</strong> "Book hall tomorrow at 2pm for client presentation and Friday evening for birthday party", "Need venue next Tuesday afternoon for annual meeting", "Can I get the hall this weekend for my daughter's birthday, preferably Saturday around 6pm?"
+    </div>
+  </div> 
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById('user-input');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const chatBox = document.getElementById('chat-box');
+      const sendBtn = document.getElementById('send-btn');
+      const typing = document.getElementById('typing');
+      
+      // Add user message with improved styling
+      chatBox.innerHTML += `<div class='msg user'><div class='user-bubble'>${message}</div></div>`;
+      input.value = '';
+      
+      // Show typing indicator and disable input
+      typing.style.display = 'block';
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Thinking...';
+      input.disabled = true;
+      
+      // Scroll to bottom
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      // Enhanced detection for different request types
+      const lowerMessage = message.toLowerCase();
+      const cancelKeywords = ["cancel", "delete", "remove", "dont need", "dont want", "no longer need", "cant make it"];
+      const isCancel = cancelKeywords.some(keyword => lowerMessage.includes(keyword));
+
+      try {
+        const res = await fetch(isCancel ? '/api/ai-cancel/' : '/api/ai-booking/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: message })
+        });
+
+        const data = await res.json();
+
+        // Hide typing indicator and re-enable input
+        typing.style.display = 'none';
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+        input.disabled = false;
+        input.focus();
+
+        if (data.status === 'success') {
+          chatBox.innerHTML += `<div class='msg bot success'><div class='bot-bubble'>${data.message}</div></div>`;
+          
+          // Display booking list if available
+          if (data.bookings && data.bookings.length > 0) {
+            let bookingsList = '<br><br><strong>📋 Your Active Bookings:</strong><br>';
+            data.bookings.forEach((booking, index) => {
+              bookingsList += `<div style="margin: 8px 0; padding: 8px; background: rgba(40, 167, 69, 0.1); border-radius: 8px;">`;
+              bookingsList += `<strong>${index + 1}. ${booking.name}</strong> <span style="color: #666; font-size: 12px;">(ID: ${booking.id})</span><br>`;
+              bookingsList += `📅 ${booking.datetime}<br>`;
+              bookingsList += `📝 ${booking.description}<br>`;
+              bookingsList += `📞 ${booking.phone}</div>`;
+            });
+            chatBox.lastElementChild.firstElementChild.innerHTML += bookingsList;
+          }
+
+        } else if (data.status === 'partial_success') {
+          // Handle partial success - some bookings succeeded, others failed
+          chatBox.innerHTML += `<div class='msg bot' style="background: #fff3cd; border-left: 4px solid #ffc107;"><div class='bot-bubble' style="background: #fff3cd; color: #856404; border-left: 4px solid #ffc107;">${data.message}</div></div>`;
+          
+          // Show successful bookings
+          if (data.created_bookings && data.created_bookings.length > 0) {
+            let successList = '<br><br><strong>✅ Successfully Created:</strong><br>';
+            data.created_bookings.forEach((booking, index) => {
+              successList += `<div style="margin: 8px 0; padding: 8px; background: rgba(40, 167, 69, 0.1); border-radius: 8px;">`;
+              successList += `<strong>${index + 1}. ${booking.date} at ${booking.time}</strong> <span style="color: #666; font-size: 12px;">(ID: ${booking.id})</span><br>`;
+              successList += `📝 ${booking.description}</div>`;
+            });
+            chatBox.lastElementChild.firstElementChild.innerHTML += successList;
+          }
+          
+          // Show failed bookings
+          if (data.failed_bookings && data.failed_bookings.length > 0) {
+            let failedList = '<br><br><strong>❌ Failed Bookings:</strong><br>';
+            data.failed_bookings.forEach((failure, index) => {
+              failedList += `<div style="margin: 8px 0; padding: 8px; background: rgba(248, 215, 218, 0.8); border-radius: 8px; color: #721c24;">`;
+              failedList += `• ${failure}</div>`;
+            });
+            chatBox.lastElementChild.firstElementChild.innerHTML += failedList;
+          }
+
+        } else {
+          // Hide typing indicator and re-enable input
+          typing.style.display = 'none';
+          sendBtn.disabled = false;
+          sendBtn.textContent = 'Send';
+          input.disabled = false;
+          
+          chatBox.innerHTML += `<div class='msg bot error'><div class='bot-bubble'>${data.message}</div></div>`;
+        }
+
+      } catch (error) {
+        // Hide typing indicator and re-enable input
+        typing.style.display = 'none';
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+        input.disabled = false;
+        
+        chatBox.innerHTML += `<div class='msg bot error'><div class='bot-bubble'>⚠️ Connection error. Please check your internet and try again.</div></div>`;
+      }
+      
+      // Always scroll to bottom
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+    
+    // Add Enter key support
+    document.getElementById('user-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+    
+    // Focus on input when page loads
+    window.onload = function() {
+      document.getElementById('user-input').focus();
+    };
+
+    async function loadBookings() {
+      const res = await fetch("/api/bookings/");
+      const data = await res.json();
+      const list = document.getElementById("booking-list");
+
+      if (data.length === 0) {
+        list.innerHTML = "<p>No bookings yet.</p>";
+        return;
+      }
+
+      list.innerHTML = "<ul>" + data.map(b => 
+        `<li><strong>${b.name}</strong> (${b.phone}) booked for <strong>${b.description}</strong> on 
+        <strong>${b.date}</strong> at <strong>${b.time}</strong></li>`
+      ).join('') + "</ul>";
+    }
+
+    window.onload = loadBookings;
+  </script>
+</body>
+</html>
